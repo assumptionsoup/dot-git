@@ -7,21 +7,110 @@
 ##############################################################################
 
 [core]
+    excludesfile = ~/.gitignore
+    autocrlf = input
     editor = vim
 
-[push]
-    default = simple
+[merge]
+    tool = p4merge
+
+[grep]
+    extendRegexp = true
+
+[mergetool]
+    keepBackup = false
+
+[rerere]
+    enabled = true
+
+[diff]
+    algorithm = patience
 
 [alias]
-    a = add
-    c = commit -v
-    cl = clone
+    ci = commit -v
     co = checkout
-    cob = checkout -b
-    com = checkout master
-    st = status
-    rc = commit -v --amend
-    uc = reset --soft HEAD~1
+    cp = cherry-pick
+    f  = fetch
+    s = status
+    st = stash
+    b = branch
+    d = diff
+    a = add
+    l = log
+    r = remote
+    rp = rev-parse
+    bn = branch-note
+
+    # Push current branch to origin
+    po = "!f() { branch=$(git rev-parse --abbrev-ref HEAD) && if [[ \"$branch\" == HEAD ]]; then echo \"No branch found.  Cannot push\"; unset branch; exit 1; else git push origin \"$branch\" \"$@\"; unset branch; fi }; f"
+
+    # Shows the breakdown of how many lines everyone has changed in a git repo (for HEAD, not for all time).
+    lines = "!git ls-files -z | xargs -0n1 git blame -w | perl -n -e '/^.*?\\((.*?)\\s+[\\d]{4}/ && print $1,\"\\n\"' | sort -f | uniq -c | sort -n"
+
+    # Stash all unstaged changes
+    su = "!git commit -m 'temporary_commit' && git stash && git reset --soft HEAD^;"
+
+    pr = pull --rebase
+    ds = diff --staged
+
+    # List log -- date=relative is useful too
+    ls = log --pretty=format:'%C(yellow)%h %C(blue)%ad%C(red)%d %C(reset)%s%C(green) [%cn]' --decorate --date=short
+
+    # Long log
+    ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
+
+    # List tags (with extra info)
+    lt = "!for tag in $(git tag -l | sort -V); do echo \"$(git tag -l $tag -n1) $(git log -1 --date=local --format=\"%Cgreen[%cn]%Creset (%cd)\" $tag)\"; done;"
+
+    # List aliases
+    la = "!git config -l | grep alias | cut -c 7-"
+
+    # Show changes in the last commit.
+    dlc = diff --cached HEAD^
+
+    wipe = reset --hard HEAD
+    undo = reset --soft HEAD^
+    amend = commit --amend -v
+    amendf = commit --amend --no-edit
+
+    # Squash all the commits since the given ref
+    # Saves a temp_branch to hold current refs in case anything f**ks up.
+    squash = "!f() { git branch temp_branch && git reset --hard $1 && git merge --squash HEAD@{1} && git commit; }; f"
+
+    graph = log --graph --pretty=format':%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset'
+
+    search = grep --color -n
+    searchf = grep --name-only
+    searchn = grep --files-without-match
+
+    # release notes
+    relnotes = !sh -c 'git log --pretty=format:\"%h %s\" --abbrev-commit `git describe --abbrev=0 $1^`..$1' -
+    vers = !git tag -ln | sort -V
+
+    # Restore any trailing whitespace that originally existed (via --ignore-space-at-eol)
+    # and strip any trailing whitespace we accidentally added.  This has some issues.
+    # I don't recommend using it.
+    # addfixedwhitespace = "!f() { git diff --ignore-space-at-eol --no-color $1 | sed -r \"s%(^\\+.*?)(\\s+)?$%\\1%g\" > tmp.txt; }; f"
+    # addfixedwhitespace = "!f() { git diff --ignore-space-at-eol --no-color $1 | python -c \"import sys, re; print ''.join([re.sub('(^\\+.*?)(\\s+)?$', '\\1', line) for line in sys.stdin])\" > tmp.txt; }; f"
+    fixwhitespaces = "!f() { git diff --ignore-space-at-eol --no-color $1 | perl -pe \"s%(^\\+.*?)([^\\S\\r\\n]+)$%\\1%g\" | git apply --cached --ignore-whitespace; }; f"
+    fw = !git fixwhitespaces
+
+    # Add everything but trailing whitespace changes
+    # addnotrailing = "!f() { git diff --ignore-space-at-eol --no-color $1 | git apply --cached --ignore-whitespace 2> /dev/null; }; f"
+
+    # Stash only bad whitespace changes - Has the potential to create no stash if there are no whitespace changes.
+    stashwhitespace = "!f() { git fixwhitespaces && git su && git reset $1; }; f"
+    sw = !git stashwhitespace
+
+    # Find what commit added the given file
+    whatAdded = "!f() { git log --diff-filter=A --pretty=oneline -- *$1; }; f"
+
+    # Find what files changed in a given commit
+    filesChanged = diff-tree --no-commit-id --name-status -r
+
+    # Find the commit with the given string in its diff
+    changedIn = log --pretty=oneline -S
+
 
 ##############################################################################
 # Colors
@@ -61,7 +150,6 @@
     path = ~/.gituserconfig
 
 [include]
-    path = ~/.gitconfig.local
+    path = ~/.gitconfig.private
 
 ##############################################################################
-# vim: ft=gitconfig
