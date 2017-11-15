@@ -12,13 +12,13 @@
     editor = vim
 
 [merge]
-    tool = p4merge
+	tool = p4mergetool
 
 [grep]
     extendRegexp = true
 
 [mergetool]
-    keepBackup = false
+	keepBackup = false
 
 [rerere]
     enabled = true
@@ -111,6 +111,8 @@
     # Find the commit with the given string in its diff
     changedIn = log --pretty=oneline -S
 
+    # Pull in pull request from github - Takes params ID, BRANCHNAME
+    ghpull = "!f() { git pull origin pull/$1/head:$2; }; f"
 
 ##############################################################################
 # Colors
@@ -153,3 +155,9 @@
     path = ~/.gitconfig.private
 
 ##############################################################################
+#[mergetool "p4merge"]
+#	cmd = p4merge \\\"$BASE\\\" \\\"$LOCAL\\\" \\\"$REMOTE\\\" \\\"$MERGED\\\"
+[mergetool "p4merge"]
+	cmd = p4merge $BASE $LOCAL $REMOTE $MERGED
+[mergetool "p4mergetool"]
+	trustExitCode = false
